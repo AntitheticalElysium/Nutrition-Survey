@@ -75,9 +75,9 @@ class NutritionCalculator:
             'Unnamed: 6': 'freq_5to6_week',
             'Unnamed: 7': 'freq_daily',
             'Unnamed: 8': 'freq_multiple_daily',
-            'Unnamed: 9': 'portion_small',
-            'Unnamed: 10': 'portion_medium',
-            'Unnamed: 11': 'portion_large'
+            'Unnamed: 10': 'portion_small',
+            'Unnamed: 11': 'portion_medium',
+            'Unnamed: 12': 'portion_large'
         }
         
         survey_df = survey_df.rename(columns=column_mappings)
@@ -146,7 +146,7 @@ class NutritionCalculator:
         
         # Calculate total weekly grams consumed
         survey_df['weekly_grams'] = survey_df['weekly_frequency'] * survey_df['portion_grams']
-        
+
         return survey_df
     
     def _match_food_groups(self, survey_df: pd.DataFrame, min_score: int = 80) -> pd.DataFrame:
