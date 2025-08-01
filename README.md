@@ -13,7 +13,7 @@ This tool takes your food survey data (Excel files) and:
 ## 📁 Project Structure
 
 ```
-NutritionSurvey/
+Nutrition-Survey/
 ├── data/
 │   ├── surveys/          ← Put your survey Excel files here
 │   ├── reference/        ← Contains nutrition_data.xlsx
