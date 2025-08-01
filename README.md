@@ -13,7 +13,7 @@ This tool takes your food survey data (Excel files) and:
 ## 📁 Project Structure
 
 ```
-Nutrition-Survey/
+NutritionSurvey/
 ├── data/
 │   ├── surveys/          ← Put your survey Excel files here
 │   ├── reference/        ← Contains nutrition_data.xlsx
@@ -135,6 +135,18 @@ vitamine_c: 78.90
 - **fer**: Total iron intake per week (milligrams)
 - **vitamine_c**: Total vitamin C intake per week (milligrams)
 
+**How calculations work:**
+The tool calculates nutrition based on actual portion sizes:
+1. Takes the frequency (how often you eat the food)
+2. Gets the portion size in grams (from your survey)
+3. Calculates total weekly grams consumed
+4. Uses nutrition database (values per 100g) to calculate actual nutrient intake
+
+**Example calculation:**
+- Food: Chicken, eaten weekly (1×/week) with medium portion (130g)
+- Weekly consumption: 1 × 130g = 130g per week
+- If chicken contains 25g protein per 100g: (130g ÷ 100g) × 25g = 32.5g protein per week
+
 ### Analysis Charts & Statistics
 
 After running the analysis, you'll find in `reports/figures/`:
@@ -151,8 +163,24 @@ Your Excel survey files should have this structure:
 |--------|---------|---------|
 | A | Food categories | "Item : viande, œuf, poisson" |
 | B | Food items | "Viande rouge: bœuf, veau, agneau" |
-| C-I | Frequency responses | "x" or blank for each frequency option |
-| J-L | Portion sizes | Numbers like "80", "130", "200" |
+| C-I | Frequency responses | 1, 2, or 3 (representing portion size selection) |
+| J-L | Portion sizes (grams) | Numbers like "80", "130", "200" |
+
+**How the portion system works:**
+- **Frequency columns (C-I)** contain values 1, 2, or 3:
+  - **1** = Small portion (uses column J value)
+  - **2** = Medium portion (uses column K value)  
+  - **3** = Large portion (uses column L value)
+- **Portion columns (J-L)** contain the actual gram weights:
+  - **Column J**: Small portion weight (e.g., 80g)
+  - **Column K**: Medium portion weight (e.g., 130g)
+  - **Column L**: Large portion weight (e.g., 200g)
+
+**Example:**
+If someone puts "2" in the "weekly" frequency column for chicken:
+- This means: "I eat chicken once per week with a medium portion"
+- The tool will use the medium portion weight from column K
+- If medium portion = 130g, total weekly intake = 1 × 130g = 130g per week
 
 **Frequency columns represent:**
 - C: Never
@@ -162,6 +190,8 @@ Your Excel survey files should have this structure:
 - G: 5-6 times per week
 - H: Daily
 - I: Multiple times daily
+
+**Important:** Only one frequency column should have a value per food item (since a person can only eat a food item at one frequency with one portion size).
 
 ## 🔍 Troubleshooting
 
