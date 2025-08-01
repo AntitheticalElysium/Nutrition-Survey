@@ -103,18 +103,49 @@ class NutritionCalculator:
     def _calculate_weekly_portions(self, survey_df: pd.DataFrame) -> pd.DataFrame:
         """
         Calculate weekly portions for each food item based on frequency responses.
+        The frequency values encode portion size: 1=small, 2=medium, 3=large
+        The portion columns contain the actual gram weights for each size.
         
         Args:
             survey_df: Cleaned survey dataframe
             
         Returns:
-            Survey dataframe with calculated weekly portions
+            Survey dataframe with calculated weekly portions and gram weights
         """
-        survey_df['weekly_portions'] = 0
+        # Clean portion columns - convert to numeric
+        portion_columns = ['portion_small', 'portion_medium', 'portion_large']
+        for col in portion_columns:
+            if col in survey_df.columns:
+                survey_df[col] = pd.to_numeric(survey_df[col], errors='coerce').fillna(0)
         
-        for freq_col, multiplier in self.frequency_multipliers.items():
+        survey_df['weekly_frequency'] = 0
+        survey_df['portion_grams'] = 0
+        
+        # Process each frequency column
+        for freq_col, time_multiplier in self.frequency_multipliers.items():
             if freq_col in survey_df.columns:
-                survey_df['weekly_portions'] += survey_df[freq_col] * multiplier
+                freq_values = survey_df[freq_col]
+                
+                # For each row, check if there's a value in this frequency column
+                for idx, freq_value in freq_values.items():
+                    if freq_value > 0:  # If this frequency is selected
+                        # Determine portion size based on the value (1, 2, or 3)
+                        if freq_value == 1:  # Small portion
+                            portion_weight = survey_df.loc[idx, 'portion_small']
+                        elif freq_value == 2:  # Medium portion
+                            portion_weight = survey_df.loc[idx, 'portion_medium']
+                        elif freq_value == 3:  # Large portion
+                            portion_weight = survey_df.loc[idx, 'portion_large']
+                        else:
+                            # Invalid value, default to medium
+                            portion_weight = survey_df.loc[idx, 'portion_medium']
+                        
+                        # Calculate weekly frequency and store portion weight
+                        survey_df.loc[idx, 'weekly_frequency'] += time_multiplier
+                        survey_df.loc[idx, 'portion_grams'] = portion_weight
+        
+        # Calculate total weekly grams consumed
+        survey_df['weekly_grams'] = survey_df['weekly_frequency'] * survey_df['portion_grams']
         
         return survey_df
     
@@ -153,7 +184,7 @@ class NutritionCalculator:
     
     def _calculate_total_nutrition(self, merged_df: pd.DataFrame) -> pd.Series:
         """
-        Calculate total nutritional intake by multiplying portions with nutritional values.
+        Calculate total nutritional intake by multiplying weekly grams with nutritional values per 100g.
         
         Args:
             merged_df: Merged dataframe with survey and nutrition data
@@ -162,7 +193,8 @@ class NutritionCalculator:
             Series with total nutritional values
         """
         # Get nutrient columns (exclude non-nutrient columns)
-        exclude_cols = {'groupe_ffq', 'food_item', 'matched_food_group', 'weekly_portions'}
+        exclude_cols = {'groupe_ffq', 'food_item', 'matched_food_group', 'weekly_frequency', 
+                       'portion_grams', 'weekly_grams', 'portion_small', 'portion_medium', 'portion_large'}
         nutrient_columns = [col for col in self.nutrition_df.columns if col not in exclude_cols]
         
         # Calculate total nutrition for each nutrient
@@ -170,8 +202,9 @@ class NutritionCalculator:
         
         for nutrient in nutrient_columns:
             if nutrient in merged_df.columns:
-                # Multiply weekly portions by nutrient content per portion
-                nutrient_intake = (merged_df['weekly_portions'] * 
+                # Calculate intake: (weekly_grams / 100g) * nutrient_per_100g
+                # This converts from per-100g values to actual consumption
+                nutrient_intake = (merged_df['weekly_grams'] / 100.0 * 
                                  pd.to_numeric(merged_df[nutrient], errors='coerce')).fillna(0)
                 total_nutrition[nutrient] = nutrient_intake.sum()
         
