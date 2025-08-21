@@ -5,10 +5,9 @@ A user-friendly tool for analyzing Food Frequency Questionnaire (FFQ) data and c
 ## 📋 What This Tool Does
 
 This tool takes your food survey data (Excel files) and:
-- ✅ Calculates weekly nutritional intake for each participant
+- ✅ Calculates **daily** nutritional intake for each participant
 - ✅ Matches food items from surveys to a nutritional database
-- ✅ Generates easy-to-read summary reports
-- ✅ Creates visual charts and statistics for analysis
+- ✅ Generates easy-to-read summary reports in Excel format, comparing individual intake to reference values.
 
 ## 📁 Project Structure
 
@@ -16,13 +15,13 @@ This tool takes your food survey data (Excel files) and:
 NutritionSurvey/
 ├── data/
 │   ├── surveys/          ← Put your survey Excel files here
-│   ├── reference/        ← Contains nutrition_data.xlsx
+│   ├── reference/        ← Contains nutrition_data.xlsx, ref_man.xlsx, ref_woman.xlsx
 │   └── results/          ← Generated summaries appear here
 ├── src/
 │   ├── calculator/       ← Main calculation script
-│   └── analysis/         ← Analysis and plotting script
+│   └── analysis/         ← (Future: Analysis and plotting script)
 └── reports/
-    └── figures/          ← Generated charts and statistics
+    └── figures/          ← (Future: Generated charts and statistics)
 ```
 
 ## 🔧 Installation & Setup
@@ -62,10 +61,14 @@ This will automatically install all the necessary packages listed in the `requir
 
 1. **Survey Files**: Place your survey Excel files in the `data/surveys/` folder
    - Files should be named like: `survey_1.xlsx`, `survey_2.xlsx`, etc.
-   - The tool expects data starting from row 4 (rows 1-3 are headers)
+   - The tool expects data starting from row 1 (row 1 is the header).
+   - **Sex Information**: The participant's sex ('M' or 'F') must be specified in cell `K2` of the survey file.
 
 2. **Nutrition Database**: Ensure `nutrition_data.xlsx` is in `data/reference/`
-   - This contains the nutritional values for different food groups
+   - This contains the nutritional values for different food groups.
+
+3. **Reference Files**: Ensure `ref_man.xlsx` and `ref_woman.xlsx` are in `data/reference/`
+   - These files contain reference nutritional values for men and women, respectively.
 
 ### Step 2: Run the Nutrition Calculator
 
@@ -78,120 +81,75 @@ python3 calculate.py
 
 **What happens:**
 - The tool processes all `.xlsx` files in `data/surveys/`
-- For each survey, it calculates weekly nutritional intake
-- Results are saved as text files in `data/results/`
+- For each survey, it calculates **daily** nutritional intake.
+- Food items appearing multiple times in the survey are aggregated (their daily consumption is summed).
+- Results are saved as Excel files (`.xlsx`) in `data/results/`, comparing the calculated intake to the appropriate sex-specific reference values.
 
-**Example output you'll see:**
+**Example output you'll see (in the generated Excel file):**
 ```
-2025-08-01 06:39:43 - INFO - Loaded nutrition data with 135 food groups
-2025-08-01 06:39:43 - INFO - Found 2 survey files to process
-2025-08-01 06:39:43 - INFO - Processing survey: survey_1.xlsx
-2025-08-01 06:39:43 - INFO - After cleaning: 145 valid food items
-2025-08-01 06:39:43 - INFO - Matched 98/145 food items (67.6%)
-2025-08-01 06:39:43 - INFO - Successfully saved summary to: ../../data/results/survey_1_nutrition_summary.txt
+                                 Nutriments  Valeurs ref Homme  Valeurs obtenues  Difference (%)
+0                            Protéines    g               50.0         40.456714      -19.086571
+1                              Glucides   g              260.0       1362.983000      424.224231
+2                                 Sucres  g               90.0       1072.042607     1091.158452
+...
 ```
-
-### Step 3: Generate Analysis & Charts
-
-```bash
-cd ../analysis
-python3 analyze.py
-```
-
-**What happens:**
-- Reads all nutrition summary files
-- Creates comparison charts between surveys
-- Generates statistical summaries
-- Saves everything in `reports/figures/`
 
 ## 📈 Understanding Your Results
 
 ### Individual Survey Summaries
-Each survey generates a file like `survey_1_nutrition_summary.txt`:
+Each survey generates an Excel file like `survey_1_nutrition_summary.xlsx` in `data/results/`.
 
-```
-=== NUTRITIONAL INTAKE SUMMARY ===
-Survey File: survey_1.xlsx
-Analysis Date: 2025-08-01 06:39:44
-==================================================
-TOTAL WEEKLY NUTRITIONAL INTAKE:
------------------------------------
-proteines: 245.67
-lipides: 189.23
-glucides: 567.89
-fibres: 23.45
-calcium: 890.12
-fer: 12.34
-vitamine_c: 78.90
-...
-```
-
-**What this means:**
-- **proteines**: Total protein intake per week (grams)
-- **lipides**: Total fat intake per week (grams)  
-- **glucides**: Total carbohydrate intake per week (grams)
-- **fibres**: Total fiber intake per week (grams)
-- **calcium**: Total calcium intake per week (milligrams)
-- **fer**: Total iron intake per week (milligrams)
-- **vitamine_c**: Total vitamin C intake per week (milligrams)
+**Key columns in the output:**
+- **Nutriments**: The name of the nutrient.
+- **Valeurs ref Homme/Femme**: The reference daily intake value for the corresponding sex.
+- **Valeurs obtenues**: The calculated daily intake value for the survey participant.
+- **Difference (%)**: The percentage difference between the calculated intake and the reference value.
 
 **How calculations work:**
-The tool calculates nutrition based on actual portion sizes:
-1. Takes the frequency (how often you eat the food)
-2. Gets the portion size in grams (from your survey)
-3. Calculates total weekly grams consumed
-4. Uses nutrition database (values per 100g) to calculate actual nutrient intake
+The tool calculates nutrition based on actual portion sizes and frequencies:
+1. Takes the frequency (how often you eat the food) and portion size (from your survey).
+2. Calculates total daily grams consumed for each food item.
+3. Aggregates daily grams for duplicate food items.
+4. Uses nutrition database (values per 100g) to calculate actual daily nutrient intake.
+5. Compares calculated intake to reference values and computes the percentage difference.
 
-**Example calculation:**
-- Food: Chicken, eaten weekly (1×/week) with medium portion (130g)
-- Weekly consumption: 1 × 130g = 130g per week
-- If chicken contains 25g protein per 100g: (130g ÷ 100g) × 25g = 32.5g protein per week
-
-### Analysis Charts & Statistics
-
-After running the analysis, you'll find in `reports/figures/`:
-
-1. **`average_nutritional_intake.png`**: Bar chart showing average intake across all surveys
-2. **`survey_comparison.png`**: Comparison chart between different surveys (if multiple)
-3. **`nutritional_statistics.txt`**: Detailed statistics with averages and variations
+**Example calculation (conceptual):**
+- Food: Bread, eaten daily (1×/day) with medium portion (100g)
+- Daily consumption: 1 × 100g = 100g per day
+- If bread contains 5g protein per 100g: (100g ÷ 100g) × 5g = 5g protein per day
 
 ## 📝 Survey Data Format
 
-Your Excel survey files should have this structure:
+Your Excel survey files should have this structure (header in row 1):
 
-| Column | Content | Example |
-|--------|---------|---------|
-| A | Food categories | "Item : viande, œuf, poisson" |
-| B | Food items | "Viande rouge: bœuf, veau, agneau" |
-| C-I | Frequency responses | 1, 2, or 3 (representing portion size selection) |
-| J-L | Portion sizes (grams) | Numbers like "80", "130", "200" |
+| Column | Header (Row 1) | Content | Example |
+|--------|----------------|---------|---------|
+| A      | `ALIMENT`      | Food items | "Pains blancs" |
+| B      | `JAMAIS`       | Frequency: Never | (empty or 0) |
+| C      | `1-3 MOIS`     | Frequency: 1-3 times per month | 1, 2, or 3 (portion size selection) |
+| D      | `1 SEMAINE`    | Frequency: 1 time per week | 1, 2, or 3 |
+| E      | `2-4 SEMAINE`  | Frequency: 2-4 times per week | 1, 2, or 3 |
+| F      | `5-6 SEMAINES` | Frequency: 5-6 times per week | 1, 2, or 3 |
+| G      | `TOUS`         | Frequency: Daily | 1, 2, or 3 |
+| H      | `PETITE `      | Small portion size (grams) | "100" |
+| I      | `MOYENNE `     | Medium portion size (grams) | "150" |
+| J      | `GROSSE`       | Large portion size (grams) | "200" |
+| K      | `SEXE`         | Participant's sex (only in K2) | "M" or "F" |
 
 **How the portion system works:**
-- **Frequency columns (C-I)** contain values 1, 2, or 3:
-  - **1** = Small portion (uses column J value)
-  - **2** = Medium portion (uses column K value)  
-  - **3** = Large portion (uses column L value)
-- **Portion columns (J-L)** contain the actual gram weights:
-  - **Column J**: Small portion weight (e.g., 80g)
-  - **Column K**: Medium portion weight (e.g., 130g)
-  - **Column L**: Large portion weight (e.g., 200g)
+- **Frequency columns (C-G)** contain values 1, 2, or 3:
+  - **1** = Small portion (uses column H value)
+  - **2** = Medium portion (uses column I value)  
+  - **3** = Large portion (uses column J value)
+- **Portion columns (H-J)** contain the actual gram weights.
 
 **Example:**
-If someone puts "2" in the "weekly" frequency column for chicken:
-- This means: "I eat chicken once per week with a medium portion"
-- The tool will use the medium portion weight from column K
-- If medium portion = 130g, total weekly intake = 1 × 130g = 130g per week
+If someone puts "2" in the "1 SEMAINE" frequency column for bread:
+- This means: "I eat bread once per week with a medium portion"
+- The tool will use the medium portion weight from column I.
+- If medium portion = 150g, total weekly intake = 1 × 150g = 150g per week. This is then converted to daily.
 
-**Frequency columns represent:**
-- C: Never
-- D: Monthly  
-- E: Weekly
-- F: 2-4 times per week
-- G: 5-6 times per week
-- H: Daily
-- I: Multiple times daily
-
-**Important:** Only one frequency column should have a value per food item (since a person can only eat a food item at one frequency with one portion size).
+**Important:** Only one frequency column should have a value per food item row. Food items can appear multiple times in the survey, and their daily consumption will be summed.
 
 ## 🔍 Troubleshooting
 
@@ -205,10 +163,16 @@ If someone puts "2" in the "weekly" frequency column for chicken:
 - Verify `nutrition_data.xlsx` is in `data/reference/`
 - Check file name spelling exactly
 
+**"Column 'Valeurs obtenues' not found in the reference file."**
+- Ensure `ref_man.xlsx` and `ref_woman.xlsx` are in `data/reference/` and contain the expected column headers.
+
+**"Sex not specified or invalid in cell K2."**
+- Ensure cell `K2` in your survey file contains either 'M' or 'F' (case-insensitive).
+
 **"Low matching percentage"**
-- This is normal - some food items might not match the database
-- The tool will still calculate nutrition for matched items
-- Unmatched items are listed in the summary for manual review
+- This is normal - some food items might not match the database.
+- The tool will still calculate nutrition for matched items.
+- Unmatched items are effectively ignored in the calculation.
 
 **"Module not found" errors**
 - Run the pip install command again:
