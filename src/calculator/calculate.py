@@ -30,11 +30,18 @@ class NutritionCalculator:
         # Frequency multipliers for converting survey responses to daily portions
         self.frequency_multipliers = {
             'JAMAIS': 0,
-            '1-3 MOIS': (1/4) / 7,  # Average 1-3 times per month (approx 1/4 per week), then daily
-            '1 SEMAINE': 1/7,       # 1 per week, then daily
-            '2-4 SEMAINE': 3/7,     # Average 3 per week, then daily
-            '5-6 SEMAINES': 5.5/7,  # Average 5.5 per week, then daily
-            'TOUS': 1,              # 1 per day
+            '1-3 MOIS': (2/30.5),
+            '1 SEMAINE': 1/7,
+            '2-4 SEMAINE': 3/7,
+            '5-6 SEMAINES': 5.5/7,
+            'TOUS': 1,
+            # Additional column names from survey_2.xlsx
+            'JAMAIS ': 0,
+            '1-3 FOIS MOIS': (2/30.5),
+            '1 FOIS SEMAINE': 1/7,
+            '2/4 FOIS SEMAINE': 3/7,
+            '5/6 FOIS SEMAINE': 5.5/7,
+            'TOUS LES JOURS': 1,
         }
         
         # Manual corrections for food matching
@@ -66,10 +73,13 @@ class NutritionCalculator:
         Returns:
             Cleaned survey dataframe
         """
+        # Clean column names by stripping whitespace
+        survey_df.columns = survey_df.columns.str.strip()
+
         column_mappings = {
             'ALIMENT': 'food_item',
-            'PETITE ': 'portion_small',
-            'MOYENNE ': 'portion_medium',
+            'PETITE': 'portion_small',
+            'MOYENNE': 'portion_medium',
             'GROSSE': 'portion_large'
         }
         
@@ -290,7 +300,7 @@ class NutritionCalculator:
         
         df[val_obtenues_col] = df[val_obtenues_col].fillna(0)
 
-        df['Difference (%)'] = ((df[val_obtenues_col] - df[ref_col]) / df[ref_col]) * 100
+        df['Difference (%)'] = (((df[val_obtenues_col] - df[ref_col]) / df[ref_col]) * 100).round(1)
         df['Difference (%)'] = df['Difference (%)'].fillna(0)
 
         df.to_excel(output_path, index=False)

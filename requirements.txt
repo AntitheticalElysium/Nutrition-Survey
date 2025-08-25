@@ -2,4 +2,3 @@ pandas
 openpyxl
 thefuzz
 matplotlib
-numbers-parser
