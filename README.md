@@ -105,6 +105,24 @@ Each survey generates an Excel file like `survey_1_nutrition_summary.xlsx` in `d
 - **Valeurs obtenues**: The calculated daily intake value for the survey participant.
 - **Difference (%)**: The percentage difference between the calculated intake and the reference value.
 
+### Aggregate Statistics Report
+After processing all surveys, the tool generates `statistiques_nutritionnelles.xlsx` with statistics grouped by sex.
+
+**Sheets:**
+- **Statistiques Hommes**: Statistics for male participants
+- **Statistiques Femmes**: Statistics for female participants
+
+**Columns in each sheet:**
+| Column | Description |
+|--------|-------------|
+| **Nutriment** | Name of the nutrient |
+| **Moyenne** | Mean (average) value across all participants |
+| **Médiane** | Median value |
+| **Écart-type** | Standard deviation (requires 2+ participants) |
+| **Minimum** | Lowest value observed |
+| **Maximum** | Highest value observed |
+| **Nombre de participants** | Number of participants in this group |
+
 **How calculations work:**
 The tool calculates nutrition based on actual portion sizes and frequencies:
 1. Takes the frequency (how often you eat the food) and portion size (from your survey).
