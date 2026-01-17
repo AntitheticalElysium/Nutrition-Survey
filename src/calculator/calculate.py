@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 import shutil
 import openpyxl
+import numpy as np
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -227,6 +228,7 @@ class NutritionCalculator:
             self._save_results(sex, survey_path.name, total_nutrition, output_path)
             
             logger.info(f"Successfully saved summary to: {output_path}")
+            return sex, total_nutrition
             
         except Exception as e:
             logger.error(f"Error processing {survey_path}: {e}")
@@ -304,6 +306,49 @@ class NutritionCalculator:
         df['Difference (%)'] = df['Difference (%)'].fillna(0)
 
         df.to_excel(output_path, index=False)
+    
+    def _save_statistics(self, results_by_sex: dict, output_dir: Path) -> None:
+        """
+        Save aggregate statistics (mean, median, std, min, max) for each nutrient by sex.
+        Creates a user-friendly Excel file with French labels.
+        """
+        output_path = output_dir / "statistiques_nutritionnelles.xlsx"
+        
+        # French labels for statistics
+        stat_labels = {
+            'mean': 'Moyenne',
+            'median': 'Médiane', 
+            'std': 'Écart-type',
+            'min': 'Minimum',
+            'max': 'Maximum',
+            'count': 'Nombre de participants'
+        }
+        
+        with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+            for sex, label in [('M', 'Statistiques Hommes'), ('F', 'Statistiques Femmes')]:
+                if not results_by_sex.get(sex):
+                    continue
+                
+                # Combine all results for this sex into a DataFrame
+                df = pd.DataFrame(results_by_sex[sex])
+                
+                # Calculate statistics
+                stats = pd.DataFrame({
+                    stat_labels['mean']: df.mean().round(2),
+                    stat_labels['median']: df.median().round(2),
+                    stat_labels['std']: df.std().round(2),
+                    stat_labels['min']: df.min().round(2),
+                    stat_labels['max']: df.max().round(2),
+                    stat_labels['count']: len(df)
+                })
+                
+                # Reset index to make nutrient names a column
+                stats = stats.reset_index()
+                stats = stats.rename(columns={'index': 'Nutriment'})
+                
+                stats.to_excel(writer, sheet_name=label, index=False)
+        
+        logger.info(f"Statistiques sauvegardées dans: {output_path}")
 
 def main():
     """Main function to process all surveys in the surveys directory."""
@@ -327,14 +372,24 @@ def main():
         
         logger.info(f"Found {len(survey_files)} survey files to process")
         
+        # Collect results by sex for aggregate statistics
+        results_by_sex = {'M': [], 'F': []}
+        
         for survey_file in survey_files:
             if survey_file.name.startswith('~'):
                 continue
             try:
-                calculator.calculate_nutrition(survey_file, results_dir)
+                result = calculator.calculate_nutrition(survey_file, results_dir)
+                if result:
+                    sex, nutrition = result
+                    results_by_sex[sex].append(nutrition)
             except Exception as e:
                 logger.error(f"Failed to process {survey_file.name}: {e}")
                 continue
+        
+        # Generate aggregate statistics if we have results
+        if results_by_sex['M'] or results_by_sex['F']:
+            calculator._save_statistics(results_by_sex, results_dir)
         
         logger.info("Processing complete!")
         
